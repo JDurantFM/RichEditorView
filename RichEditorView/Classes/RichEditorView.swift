@@ -16,40 +16,40 @@ import UIKit
         Called when the inner height of the text being displayed changes
         Can be used to update the UI
     */
-    optional func richEditor(editor: RichEditorView, heightDidChange height: Int)
+    @objc optional func richEditor(editor: RichEditorView, heightDidChange height: Int)
 
     /**
         Called whenever the content inside the view changes
     */
-    optional func richEditor(editor: RichEditorView, contentDidChange content: String)
+    @objc optional func richEditor(editor: RichEditorView, contentDidChange content: String)
 
     /**
         Called when the rich editor starts editing
     */
-    optional func richEditorTookFocus(editor: RichEditorView)
+    @objc optional func richEditorTookFocus(editor: RichEditorView)
     
     /**
         Called when the rich editor stops editing or loses focus
     */
-    optional func richEditorLostFocus(editor: RichEditorView)
+    @objc optional func richEditorLostFocus(editor: RichEditorView)
     
     /**
         Called when the RichEditorView has become ready to receive input
         More concretely, is called when the internal UIWebView loads for the first time, and contentHTML is set
     */
-    optional func richEditorDidLoad(editor: RichEditorView)
+    @objc optional func richEditorDidLoad(editor: RichEditorView)
     
     /**
         Called when the internal UIWebView begins loading a URL that it does not know how to respond to
         For example, if there is an external link, and then the user taps it
     */
-    optional func richEditor(editor: RichEditorView, shouldInteractWithURL url: NSURL) -> Bool
+    @objc optional func richEditor(editor: RichEditorView, shouldInteractWithURL url: URL) -> Bool
     
     /**
         Called when custom actions are called by callbacks in the JS
         By default, this method is not used unless called by some custom JS that you add
     */
-    optional func richEditor(editor: RichEditorView, handleCustomAction action: String)
+    @objc optional func richEditor(editor: RichEditorView, handleCustomAction action: String)
 }
 
 /**
@@ -67,7 +67,7 @@ public class RichEditorView: UIView {
     */
     public var scrollEnabled: Bool = true {
         didSet {
-            webView.scrollView.scrollEnabled = scrollEnabled
+            webView.scrollView.isScrollEnabled = scrollEnabled
         }
     }
 
@@ -91,7 +91,7 @@ public class RichEditorView: UIView {
     private var editingEnabledVar = true
     public var editingEnabled: Bool {
         get { return isContentEditable() }
-        set { setContentEditable(newValue) }
+        set { setContentEditable(editable: newValue) }
     }
     
     /**
@@ -108,7 +108,7 @@ public class RichEditorView: UIView {
     */
     public private(set) var editorHeight: Int = 0 {
         didSet {
-            delegate?.richEditor?(self, heightDidChange: editorHeight)
+            delegate?.richEditor?(editor: self, heightDidChange: editorHeight)
         }
     }
 
@@ -118,7 +118,7 @@ public class RichEditorView: UIView {
     */
     public private(set) var contentHTML: String = "" {
         didSet {
-            delegate?.richEditor?(self, contentDidChange: contentHTML)
+            delegate?.richEditor?(editor: self, contentDidChange: contentHTML)
         }
     }
 
@@ -146,17 +146,17 @@ public class RichEditorView: UIView {
     }
     
     private func setup() {
-        self.backgroundColor = UIColor.redColor()
+        self.backgroundColor = .red
         
         webView.frame = self.bounds
         webView.delegate = self
         webView.keyboardDisplayRequiresUserAction = false
         webView.scalesPageToFit = false
-        webView.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
-        webView.dataDetectorTypes = .None
-        webView.backgroundColor = UIColor.whiteColor()
+        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        webView.dataDetectorTypes = []
+        webView.backgroundColor = .white
         
-        webView.scrollView.scrollEnabled = scrollEnabled
+        webView.scrollView.isScrollEnabled = scrollEnabled
         webView.scrollView.bounces = false
         webView.scrollView.delegate = self
         webView.scrollView.clipsToBounds = false
@@ -165,9 +165,9 @@ public class RichEditorView: UIView {
         
         self.addSubview(webView)
         
-        if let filePath = NSBundle(forClass: RichEditorView.self).pathForResource("rich_editor", ofType: "html") {
-            let url = NSURL(fileURLWithPath: filePath, isDirectory: false)
-            let request = NSURLRequest(URL: url)
+        if let filePath = Bundle(for: RichEditorView.self).path(forResource: "rich_editor", ofType: "html") {
+            let url = URL(fileURLWithPath: filePath, isDirectory: false)
+            let request = URLRequest(url: url)
             webView.loadRequest(request)
         }
 
@@ -185,7 +185,7 @@ extension RichEditorView {
     public func setHTML(html: String) {
         contentHTML = html
         if editorLoaded {
-            runJS("RE.setHtml('\(escape(html))');")
+            _ = runJS("RE.setHtml('\(escape(string: html))');")
             updateHeight()
         }
     }
@@ -200,121 +200,121 @@ extension RichEditorView {
     
     public func setPlaceholderText(text: String) {
         placeholder = text
-        runJS("RE.setPlaceholderText('\(escape(text))');")
+        _ = runJS("RE.setPlaceholderText('\(escape(string: text))');")
     }
     
     public func removeFormat() {
-        runJS("RE.removeFormat();")
+        _ = runJS("RE.removeFormat();")
     }
     
     public func setFontSize(size: Int) {
-        runJS("RE.setFontSize('\(size))px');")
+        _ = runJS("RE.setFontSize('\(size))px');")
     }
     
     public func setEditorBackgroundColor(color: UIColor) {
-        let hex = colorToHex(color)
-        runJS("RE.setBackgroundColor('\(hex)');")
+        let hex = colorToHex(color: color)
+        _ = runJS("RE.setBackgroundColor('\(hex)');")
     }
     
     public func undo() {
-        runJS("RE.undo();")
+        _ = runJS("RE.undo();")
     }
     
     public func redo() {
-        runJS("RE.redo();")
+        _ = runJS("RE.redo();")
     }
     
     public func bold() {
-        runJS("RE.setBold();")
+        _ = runJS("RE.setBold();")
     }
     
     public func italic() {
-        runJS("RE.setItalic();")
+        _ = runJS("RE.setItalic();")
     }
     
     // "superscript" is a keyword
     public func subscriptText() {
-        runJS("RE.setSubscript();")
+        _ = runJS("RE.setSubscript();")
     }
     
     public func superscript() {
-        runJS("RE.setSuperscript();")
+        _ = runJS("RE.setSuperscript();")
     }
     
     public func strikethrough() {
-        runJS("RE.setStrikeThrough();")
+        _ = runJS("RE.setStrikeThrough();")
     }
     
     public func underline() {
-        runJS("RE.setUnderline();")
+        _ = runJS("RE.setUnderline();")
     }
     
     public func setTextColor(color: UIColor) {
-        runJS("RE.prepareInsert();")
+        _ = runJS("RE.prepareInsert();")
         
-        let hex = colorToHex(color)
-        runJS("RE.setTextColor('\(hex)');")
+        let hex = colorToHex(color: color)
+        _ = runJS("RE.setTextColor('\(hex)');")
     }
     
     public func setTextBackgroundColor(color: UIColor) {
-        runJS("RE.prepareInsert();")
+        _ = runJS("RE.prepareInsert();")
         
-        let hex = colorToHex(color)
-        runJS("RE.setTextBackgroundColor('\(hex)');")
+        let hex = colorToHex(color: color)
+        _ = runJS("RE.setTextBackgroundColor('\(hex)');")
     }
     
     public func header(h: Int) {
-        runJS("RE.setHeading('\(h)');")
+        _ = runJS("RE.setHeading('\(h)');")
     }
 
     public func indent() {
-        runJS("RE.setIndent();")
+        _ = runJS("RE.setIndent();")
     }
 
     public func outdent() {
-        runJS("RE.setOutdent();")
+        _ = runJS("RE.setOutdent();")
     }
 
     public func orderedList() {
-        runJS("RE.setOrderedList();")
+        _ = runJS("RE.setOrderedList();")
     }
 
     public func unorderedList() {
-        runJS("RE.setUnorderedList();")
+        _ = runJS("RE.setUnorderedList();")
     }
 
     public func blockquote() {
-        runJS("RE.setBlockquote()");
+        _ = runJS("RE.setBlockquote()");
     }
     
     public func alignLeft() {
-        runJS("RE.setJustifyLeft();")
+        _ = runJS("RE.setJustifyLeft();")
     }
     
     public func alignCenter() {
-        runJS("RE.setJustifyCenter();")
+        _ = runJS("RE.setJustifyCenter();")
     }
     
     public func alignRight() {
-        runJS("RE.setJustifyRight();")
+        _ = runJS("RE.setJustifyRight();")
     }
     
     public func insertImage(url: String, alt: String) {
-        runJS("RE.prepareInsert();")
-        runJS("RE.insertImage('\(escape(url))', '\(escape(alt))');")
+        _ = runJS("RE.prepareInsert();")
+        _ = runJS("RE.insertImage('\(escape(string: url))', '\(escape(string: alt))');")
     }
     
     public func insertLink(href: String, title: String) {
-        runJS("RE.prepareInsert();")
-        runJS("RE.insertLink('\(escape(href))', '\(escape(title))');")
+        _ = runJS("RE.prepareInsert();")
+        _ = runJS("RE.insertLink('\(escape(string: href))', '\(escape(string: title))');")
     }
     
     public func focus() {
-        runJS("RE.focus();")
+        _ = runJS("RE.focus();")
     }
     
     public func blur() {
-        runJS("RE.blurFocus()")
+        _ = runJS("RE.blurFocus()")
     }
 
     /**
@@ -352,8 +352,8 @@ extension RichEditorView {
         - parameter js: The JavaScript string to be run
         - returns: The result of the JavaScript that was run
     */
-    public func runJS(js: String) -> String {
-        let string = webView.stringByEvaluatingJavaScriptFromString(js) ?? ""
+    public func runJS(_ js: String) -> String {
+        let string = webView.stringByEvaluatingJavaScript(from: js) ?? ""
         return string
     }
 }
@@ -362,7 +362,7 @@ extension RichEditorView {
 // MARK: - UIScrollViewDelegate
 extension RichEditorView: UIScrollViewDelegate {
 
-    public func scrollViewDidScroll(scrollView: UIScrollView) {
+    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
         // We use this to keep the scroll view from changing its offset when the keyboard comes up
         if !scrollEnabled {
             scrollView.bounds = webView.bounds
@@ -374,20 +374,20 @@ extension RichEditorView: UIScrollViewDelegate {
 // MARK: - UIWebViewDelegate
 extension RichEditorView: UIWebViewDelegate {
 
-    public func webView(webView: UIWebView, shouldStartLoadWithRequest request: NSURLRequest, navigationType: UIWebViewNavigationType) -> Bool {
+    public func webView(_ webView: UIWebView, shouldStartLoadWith request: URLRequest, navigationType: UIWebViewNavigationType) -> Bool {
 
         // Handle pre-defined editor actions
         let callbackPrefix = "re-callback://"
-        if request.URL?.absoluteString!.hasPrefix(callbackPrefix) == true {
+        if request.url?.absoluteString.hasPrefix(callbackPrefix) == true {
             
             // When we get a callback, we need to fetch the command queue to run the commands
             // It comes in as a JSON array of commands that we need to parse
             let commands = runJS("RE.getCommandQueue();")
-            if let data = (commands as NSString).dataUsingEncoding(NSUTF8StringEncoding) {
+            if let data = (commands as NSString).data(using: String.Encoding.utf8.rawValue) {
                 
                 let jsonCommands: [String]?
                 do {
-                    jsonCommands = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0)) as? [String]
+                    jsonCommands = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions(rawValue: 0)) as? [String]
                 } catch {
                     jsonCommands = nil
                     NSLog("Failed to parse JSON Commands")
@@ -395,7 +395,7 @@ extension RichEditorView: UIWebViewDelegate {
                 
                 if let jsonCommands = jsonCommands {
                     for command in jsonCommands {
-                        performCommand(command)
+                        performCommand(method: command)
                     }
                 }
             }
@@ -404,10 +404,10 @@ extension RichEditorView: UIWebViewDelegate {
         }
         
         // User is tapping on a link, so we should react accordingly
-        if navigationType == .LinkClicked {
+        if navigationType == .linkClicked {
             if let
-                url = request.URL,
-               let shouldInteract = delegate?.richEditor?(self, shouldInteractWithURL:url)
+                url = request.url,
+                let shouldInteract = delegate?.richEditor?(editor: self, shouldInteractWithURL:url)
             {
                 return shouldInteract
             }
@@ -426,7 +426,7 @@ extension RichEditorView: UIGestureRecognizerDelegate {
         Delegate method for our UITapGestureDelegate.
         Since the internal web view also has gesture recognizers, we have to make sure that we actually receive our taps.
     */
-    public func gestureRecognizer(gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
     }
 
@@ -457,7 +457,7 @@ extension RichEditorView {
         editingEnabledVar = editable
         if editorLoaded {
             let value = editable ? "true" : "false"
-            runJS("RE.editor.contentEditable = \(value);")
+            _ = runJS("RE.editor.contentEditable = \(value);")
         }
     }
     
@@ -483,7 +483,7 @@ extension RichEditorView {
         let scrollView = self.webView.scrollView
         
         let contentHeight = clientHeight > 0 ? CGFloat(clientHeight) : scrollView.frame.height
-        scrollView.contentSize = CGSizeMake(scrollView.frame.width, contentHeight)
+        scrollView.contentSize = CGSize(width: scrollView.frame.width, height: contentHeight)
         
         // TODO: Make these either more dynamic or customizable!
         let lineHeight: CGFloat = 28.0
@@ -540,14 +540,13 @@ extension RichEditorView {
     private func escape(string: String) -> String {
         let unicode = string.unicodeScalars
         var newString = ""
-        for i in unicode.startIndex ..< unicode.endIndex {
-            let char = unicode[i]
+        for char in unicode {
             if char.value < 9 || (char.value > 9 && char.value < 32) // < 32 == special characters in ASCII, 9 == horizontal tab in ASCII
                 || char.value == 39 { // 39 == ' in ASCII
-                let escaped = char.escape(asASCII: true)
-                newString.appendContentsOf(escaped)
+                let escaped = char.escaped(asASCII: true)
+                newString.append(escaped)
             } else {
-                newString.append(char)
+                newString.append(String(char))
             }
         }
         return newString
@@ -563,10 +562,10 @@ extension RichEditorView {
             // If loading for the first time, we have to set the content HTML to be displayed
             if !editorLoaded {
                 editorLoaded = true
-                setHTML(contentHTML)
-                setContentEditable(editingEnabledVar)
-                setPlaceholderText(placeholder)
-                delegate?.richEditorDidLoad?(self)
+                setHTML(html: contentHTML)
+                setContentEditable(editable: editingEnabledVar)
+                setPlaceholderText(text: placeholder)
+                delegate?.richEditorDidLoad?(editor: self)
             }
             updateHeight()
         }
@@ -580,10 +579,10 @@ extension RichEditorView {
             updateHeight()
         }
         else if method.hasPrefix("focus") {
-            delegate?.richEditorTookFocus?(self)
+            delegate?.richEditorTookFocus?(editor: self)
         }
         else if method.hasPrefix("blur") {
-            delegate?.richEditorLostFocus?(self)
+            delegate?.richEditorLostFocus?(editor: self)
         }
         else if method.hasPrefix("action/") {
             let content = runJS("RE.getHtml()")
@@ -592,9 +591,11 @@ extension RichEditorView {
             // If there are any custom actions being called
             // We need to tell the delegate about it
             let actionPrefix = "action/"
-            let range = Range(start: actionPrefix.startIndex, end: actionPrefix.endIndex)
-            let action = method.stringByReplacingCharactersInRange(range, withString: "")
-            delegate?.richEditor?(self, handleCustomAction: action)
+
+            let range = Range(uncheckedBounds: (lower: actionPrefix.startIndex, upper: actionPrefix.endIndex))
+
+            let action = method.replacingCharacters(in: range, with: "")
+            delegate?.richEditor?(editor: self, handleCustomAction: action)
         }
     }
 
@@ -602,7 +603,7 @@ extension RichEditorView {
         Called by the UITapGestureRecognizer when the user taps the view.
         If we are not already the first responder, focus the editor.
     */
-    internal func viewWasTapped() {
+    @objc internal func viewWasTapped() {
         if !webView.containsFirstResponder {
             focus()
         }

@@ -52,9 +52,9 @@ public struct RichEditorOptionItem: RichEditorOption {
     /**
         The action to be performed when tapped
     */
-    public var itemAction: (RichEditorToolbar? -> Void)
+    public var itemAction: ((RichEditorToolbar?) -> Void)
 
-    public init(image: UIImage?, title: String, action: (RichEditorToolbar? -> Void)) {
+    public init(image: UIImage?, title: String, action: @escaping ((RichEditorToolbar?) -> Void)) {
         itemImage = image
         itemTitle = title
         itemAction = action
@@ -70,7 +70,7 @@ public struct RichEditorOptionItem: RichEditorOption {
         return itemTitle
     }
     
-    public func action(toolbar: RichEditorToolbar?) {
+    public func action(editor toolbar: RichEditorToolbar?) {
         itemAction(toolbar)
     }
 }
@@ -142,8 +142,9 @@ public enum RichEditorOptions: RichEditorOption {
         case .Link: name = "insert_link"
         }
         
-        let bundle = NSBundle(forClass: RichEditorToolbar.self)
-        return UIImage(named: name, inBundle: bundle, compatibleWithTraitCollection: nil)
+        let bundle = Bundle(for: RichEditorToolbar.self)
+
+        return UIImage(named: name, in: bundle, compatibleWith: nil)
     }
     
     public func title() -> String {
@@ -172,7 +173,7 @@ public enum RichEditorOptions: RichEditorOption {
         }
     }
     
-    public func action(toolbar: RichEditorToolbar?) {
+    public func action(editor toolbar: RichEditorToolbar?) {
         if let toolbar = toolbar {
             switch self {
             case .Clear: toolbar.editor?.removeFormat()
@@ -184,9 +185,9 @@ public enum RichEditorOptions: RichEditorOption {
             case .Superscript: toolbar.editor?.superscript()
             case .Strike: toolbar.editor?.strikethrough()
             case .Underline: toolbar.editor?.underline()
-            case .TextColor: toolbar.delegate?.richEditorToolbarChangeTextColor?(toolbar)
-            case .TextBackgroundColor: toolbar.delegate?.richEditorToolbarChangeBackgroundColor?(toolbar)
-            case .Header(let h): toolbar.editor?.header(h)
+            case .TextColor: toolbar.delegate?.richEditorToolbarChangeTextColor?(toolbar: toolbar)
+            case .TextBackgroundColor: toolbar.delegate?.richEditorToolbarChangeBackgroundColor?(toolbar: toolbar)
+            case .Header(let h): toolbar.editor?.header(h: h)
             case .Indent: toolbar.editor?.indent()
             case .Outdent: toolbar.editor?.outdent()
             case .OrderedList: toolbar.editor?.orderedList()
@@ -194,8 +195,8 @@ public enum RichEditorOptions: RichEditorOption {
             case .AlignLeft: toolbar.editor?.alignLeft()
             case .AlignCenter: toolbar.editor?.alignCenter()
             case .AlignRight: toolbar.editor?.alignRight()
-            case .Image: toolbar.delegate?.richEditorToolbarInsertImage?(toolbar)
-            case .Link: toolbar.delegate?.richEditorToolbarInsertLink?(toolbar)
+            case .Image: toolbar.delegate?.richEditorToolbarInsertImage?(toolbar: toolbar)
+            case .Link: toolbar.delegate?.richEditorToolbarInsertLink?(toolbar: toolbar)
             }
         }
     }
